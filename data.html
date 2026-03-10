@@ -83,7 +83,6 @@
         .info-item { display: flex; margin-bottom: 5px; font-size: 14px; }
         .label { color: #94a3b8; width: 65px; font-size: 12px; }
         
-        /* สไตล์สำหรับเบอร์โทรที่กด Copy ได้ */
         .phone-num { 
             color: var(--accent); 
             font-weight: bold; 
@@ -125,13 +124,6 @@
         .close { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #64748b; }
 
         #detailArea { margin-top: 20px; line-height: 1.6; }
-        .map-box {
-            width: 100%; height: 150px; background: #f8fafc; border-radius: 10px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            color: #64748b; margin-top: 15px; border: 1px solid #e2e8f0; font-size: 13px;
-            text-align: center; padding: 10px; box-sizing: border-box;
-            overflow: hidden;
-        }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -146,18 +138,18 @@
     <div class="search-container">
         <div class="search-group">
             <label>ชื่อหน่วยปฏิบัติการ</label>
-            <input list="unitList" id="searchName" placeholder="พิมพ์หรือเลือกหน่วยงาน..." onchange="handleNameSelect()">
+            <input list="unitList" id="searchName" placeholder="พิมพ์หรือเลือกหน่วยงาน..." oninput="render()">
             <datalist id="unitList"></datalist>
         </div>
         <div class="search-group">
             <label>อำเภอ</label>
-            <select id="searchDist" onchange="updateSubdistrictDropdown()">
+            <select id="searchDist" onchange="updateSubdistrictDropdown(); render();">
                 <option value="">ทั้งหมด</option>
             </select>
         </div>
         <div class="search-group">
             <label>ตำบล</label>
-            <select id="searchSub">
+            <select id="searchSub" onchange="render();">
                 <option value="">ทั้งหมด</option>
             </select>
         </div>
@@ -209,46 +201,48 @@
     </div>
 </div>
 
-<script>
-    let data = JSON.parse(localStorage.getItem("ems_ubon_v2")) || [];
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // --- ✨ ฟังก์ชันใหม่: คัดลอกเบอร์โทรลง Clipboard ---
-    function copyNumber(phone, event) {
-        if (event) event.stopPropagation(); // กันไม่ให้ไปเปิดหน้า Detail ซ้อนกัน
-        if (!phone || phone === '-') return;
+    // 🚩 1. นำ Config ของโปรเจกต์คุณมาใส่ตรงนี้ครับ
+    const firebaseConfig = {
+        apiKey: "วางตรงนี้",
+        authDomain: "วางตรงนี้",
+        databaseURL: "วางตรงนี้",
+        projectId: "วางตรงนี้",
+        storageBucket: "วางตรงนี้",
+        messagingSenderId: "วางตรงนี้",
+        appId: "วางตรงนี้"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const dbRef = ref(db, 'ems_units');
+
+    // เก็บข้อมูลไว้ในตัวแปร Global เพื่อให้ฟังก์ชันอื่นใช้งานได้
+    window.data = [];
+    window.dataKeys = []; // เก็บ Key ของ Firebase เพื่อใช้ในการ ลบ/แก้ไข
+
+    // 🚩 2. ฟังก์ชันดึงข้อมูลแบบ Real-time
+    onValue(dbRef, (snapshot) => {
+        const val = snapshot.val();
+        window.data = [];
+        window.dataKeys = [];
         
-        navigator.clipboard.writeText(phone).then(() => {
-            // แจ้งเตือนเล็กๆ มุมขวาบน
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true
+        if (val) {
+            Object.keys(val).forEach(key => {
+                window.data.push(val[key]);
+                window.dataKeys.push(key);
             });
-            Toast.fire({
-                icon: 'success',
-                title: 'คัดลอกเบอร์ ' + phone + ' แล้ว'
-            });
-        });
-    }
+        }
+        
+        updateFilters(); // อัปเดต Dropdown อำเภอ/ตำบล
+        render();        // แสดงผล Card
+    });
 
-    // ฟังก์ชันอื่นๆ (เหมือนเดิม)
-    function toggleModal(id, show) {
-        document.getElementById(id).style.display = show ? "block" : "none";
-    }
-
-    function save() { localStorage.setItem("ems_ubon_v2", JSON.stringify(data)); }
-
-    function openAddModal() {
-        document.getElementById("modalTitle").innerText = "เพิ่มข้อมูลหน่วยงาน";
-        document.getElementById("btnSubmit").innerText = "บันทึกข้อมูล";
-        document.getElementById("editIndex").value = "";
-        document.querySelectorAll("#addModal input:not([type=hidden])").forEach(i => i.value = "");
-        toggleModal('addModal', true);
-    }
-
-    function handleSave() {
+    // 🚩 3. ปรับฟังก์ชัน handleSave ให้ส่งขึ้น Firebase
+    window.handleSave = function() {
         const name = document.getElementById("newName").value;
         const phone = document.getElementById("newPhone").value;
         const sub = document.getElementById("newSub").value;
@@ -262,15 +256,59 @@
             return;
         }
 
-        const date = new Date().toLocaleString("th-TH", {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+        const date = new Date().toLocaleString("th-TH");
         const newItem = { name, phone, sub, dist, level, mapLink, date };
 
-        if (editIndex === "") { data.push(newItem); } 
-        else { data[editIndex] = newItem; }
+        if (editIndex === "") {
+            // เพิ่มใหม่
+            push(dbRef, newItem);
+        } else {
+            // แก้ไขรายการเดิม
+            const key = window.dataKeys[editIndex];
+            update(ref(db, 'ems_units/' + key), newItem);
+        }
 
-        save(); updateFilters(); render();
         toggleModal('addModal', false);
         Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1500 });
+    };
+
+    // 🚩 4. ปรับฟังก์ชัน deleteItem ให้ลบจาก Firebase
+    window.deleteItem = function(index) {
+        Swal.fire({
+            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true,
+            confirmButtonColor: '#dc2626', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const key = window.dataKeys[index];
+                remove(ref(db, 'ems_units/' + key));
+            }
+        });
+    };
+</script>
+
+<script>
+    // --- ฟังก์ชัน UI ทั้งหมด (คงเดิมตามโค้ดคุณ) ---
+    function copyNumber(phone, event) {
+        if (event) event.stopPropagation();
+        if (!phone || phone === '-') return;
+        navigator.clipboard.writeText(phone).then(() => {
+            const Toast = Swal.mixin({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true
+            });
+            Toast.fire({ icon: 'success', title: 'คัดลอกเบอร์ ' + phone + ' แล้ว' });
+        });
+    }
+
+    function toggleModal(id, show) {
+        document.getElementById(id).style.display = show ? "block" : "none";
+    }
+
+    function openAddModal() {
+        document.getElementById("modalTitle").innerText = "เพิ่มข้อมูลหน่วยงาน";
+        document.getElementById("btnSubmit").innerText = "บันทึกข้อมูล";
+        document.getElementById("editIndex").value = "";
+        document.querySelectorAll("#addModal input:not([type=hidden])").forEach(i => i.value = "");
+        toggleModal('addModal', true);
     }
 
     function render() {
@@ -281,7 +319,7 @@
         list.innerHTML = "";
         let count = 0;
 
-        data.forEach((item, index) => {
+        (window.data || []).forEach((item, index) => {
             if (item.name.toLowerCase().includes(fName) && (!fDist || item.dist === fDist) && (!fSub || item.sub === fSub)) {
                 count++;
                 list.innerHTML += `
@@ -313,8 +351,7 @@
     }
 
     function showDetail(index) {
-        const item = data[index];
-        const hasMap = item.mapLink && item.mapLink.trim() !== "";
+        const item = window.data[index];
         document.getElementById("detailContent").innerHTML = `
             <h2 style="color:var(--primary);">${item.name}</h2>
             <span class="badge badge-${item.level.toLowerCase()}">${item.level}</span>
@@ -330,9 +367,8 @@
         toggleModal('detailModal', true);
     }
 
-    // --- (ฟังก์ชันอื่นๆ ทั้งหมดคงเดิมจากโค้ดที่คุณส่งมา) ---
     function editItem(index) {
-        const item = data[index];
+        const item = window.data[index];
         document.getElementById("modalTitle").innerText = "แก้ไขข้อมูลหน่วยงาน";
         document.getElementById("btnSubmit").innerText = "บันทึกการแก้ไข";
         document.getElementById("editIndex").value = index;
@@ -345,22 +381,15 @@
         toggleModal('addModal', true);
     }
 
-    function deleteItem(index) {
-        Swal.fire({
-            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true,
-            confirmButtonColor: '#dc2626', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-            if (result.isConfirmed) { data.splice(index, 1); save(); updateFilters(); render(); }
-        });
-    }
-
     function updateFilters() {
         const distSelect = document.getElementById("searchDist");
-        const uniqueDistricts = [...new Set(data.map(item => item.dist))];
+        const currentDist = distSelect.value;
+        const uniqueDistricts = [...new Set(window.data.map(item => item.dist))];
         distSelect.innerHTML = '<option value="">ทั้งหมด</option>';
         uniqueDistricts.sort().forEach(d => {
             const opt = document.createElement("option");
             opt.value = d; opt.innerText = d;
+            if(d === currentDist) opt.selected = true;
             distSelect.appendChild(opt);
         });
         updateSubdistrictDropdown();
@@ -369,30 +398,24 @@
     function updateSubdistrictDropdown() {
         const distValue = document.getElementById("searchDist").value;
         const subSelect = document.getElementById("searchSub");
-        const filteredSubs = data.filter(item => !distValue || item.dist === distValue).map(item => item.sub);
+        const currentSub = subSelect.value;
+        const filteredSubs = window.data.filter(item => !distValue || item.dist === distValue).map(item => item.sub);
         const uniqueSubs = [...new Set(filteredSubs)];
         subSelect.innerHTML = '<option value="">ทั้งหมด</option>';
         uniqueSubs.sort().forEach(s => {
             if(s) {
                 const opt = document.createElement("option");
                 opt.value = s; opt.innerText = s;
+                if(s === currentSub) opt.selected = true;
                 subSelect.appendChild(opt);
             }
         });
     }
 
-    function handleNameSelect() {
-        if (document.getElementById("searchName").value.trim() !== "") {
-            document.getElementById("searchDist").value = "";
-            document.getElementById("searchSub").value = "";
-            updateSubdistrictDropdown();
-        }
-    }
-
     function updateDatalist() {
         const dl = document.getElementById("unitList");
         dl.innerHTML = "";
-        [...new Set(data.map(item => item.name))].sort((a,b) => a.localeCompare(b, 'th')).forEach(name => {
+        [...new Set(window.data.map(item => item.name))].sort((a,b) => a.localeCompare(b, 'th')).forEach(name => {
             const opt = document.createElement("option");
             opt.value = name;
             dl.appendChild(opt);
@@ -410,21 +433,13 @@
         if (event.target.className === 'modal') event.target.style.display = "none";
     }
 
-    updateFilters();
-    render();
-
-    // ==========================================
-    // 🔒 ส่วนป้องกันการดูโค้ด (SECURITY LOCK)
-    // ==========================================
+    // ส่วนป้องกันโค้ด (Security Lock) ตามความต้องการของคุณ
     document.addEventListener('contextmenu', e => e.preventDefault(), false);
     document.onkeydown = function(e) {
         if(event.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83))) {
             return false;
         }
     };
-    document.onselectstart = () => false;
-    setInterval(() => { debugger; }, 1000);
-
 </script>
 
 </body>
