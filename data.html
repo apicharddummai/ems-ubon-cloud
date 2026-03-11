@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* ปรับแต่งให้เข้ากับธีม Sarabun ของคุณ */
+    .select2-container--default .select2-selection--single {
+        height: 40px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 5px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 38px;
+    }
+    .select2-dropdown {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+</style>
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ศูนย์รับแจ้งเหตุ EMS อุบลราชธานี</title>
+    <title>ศูนย์รับแจ้งเหตุและสั่งการ จังหวัดอุบลราชธานี</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
@@ -34,6 +54,14 @@
             window.data = val ? Object.keys(val).map(key => ({ ...val[key], id: key })) : [];
             updateFilters();
             render();
+			// เพิ่มคำสั่งนี้ไว้ในส่วนท้ายของฟังก์ชัน updateFilters() และ updateSubdistrictDropdown()
+$(document).ready(function() {
+    $('#searchDist').select2({ placeholder: "เลือกอำเภอ", allowClear: true });
+    $('#searchSub').select2({ placeholder: "เลือกตำบล", allowClear: true });
+});
+
+// และในฟังก์ชัน render() เมื่อมีการอัปเดตข้อมูลใหม่ ให้สั่ง refresh select2 ด้วยครับ
+// $('#searchDist').trigger('change');
         });
 
         // ส่งฟังก์ชันออกไปยัง window เพื่อให้ HTML เรียกใช้ได้
@@ -186,21 +214,64 @@
         }
         .close { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #64748b; }
     </style>
-</head>
-<body oncontextmenu="return false;">
-
 <header>
-    <h1>🚑 ศูนย์รับแจ้งเหตุ EMS อุบลราชธานี</h1>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 12px;">
+        <img src="https://i.postimg.cc/tgMz7SVd/sphch.png" alt="Logo 1" style="height: 89px; width: auto;">
+        <img src="https://i.postimg.cc/g0JDzFrV/xbc.png" alt="Logo 2" style="height: 85px; width: auto;">
+    </div>
+    
+    <h1 style="margin: 0; font-size: clamp(18px, 5vw, 24px); line-height: 1.4;">
+        ข้อมูลหน่วยปฏิบัติการ ศูนย์รับแจ้งเหตุและสั่งการ จังหวัดอุบลราชธานี
+    </h1>
 </header>
+
+<style>
+    header {
+        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+        color: white; 
+        padding: 25px 15px;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    /* ตกแต่งเพิ่มเติมให้ดูทันสมัย */
+    header h1 {
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+</style>
+
+<style>
+    /* เพิ่มเติมสไตล์เพื่อให้ Header ดูดีขึ้น */
+    header {
+        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+        color: white; 
+        padding: 30px 20px; /* เพิ่มพื้นที่แนวตั้ง */
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column; /* จัดโลโก้และข้อความเรียงกันเป็นแนวตั้ง */
+        align-items: center;
+        justify-content: center;
+    }
+
+    header h1 {
+        max-width: 800px;
+        line-height: 1.4;
+    }
+</style>
 
 <div class="container">
     <button class="btn-main btn-open-modal" onclick="openAddModal()">+ เพิ่มหน่วยปฏิบัติการใหม่</button>
 
     <div class="search-container">
         <div class="search-group">
-            <label>ชื่อหน่วยปฏิบัติการ</label>
-            <input list="unitList" id="searchName" placeholder="พิมพ์หรือเลือกหน่วยงาน..." onchange="handleNameSelect()">
-            <datalist id="unitList"></datalist>
+            <div class="search-group">
+    <label>ชื่อหน่วยปฏิบัติการ</label>
+    <select id="searchName" onchange="handleNameSelect()">
+        <option value="">ทั้งหมด</option>
+    </select>
+</div>
         </div>
         <div class="search-group">
             <label>อำเภอ</label>
@@ -214,8 +285,8 @@
                 <option value="">ทั้งหมด</option>
             </select>
         </div>
-        <button class="btn-main" style="background: #4f46e5;" onclick="render()">🔎 ค้นหา</button>
-        <button class="btn-main" style="background: #64748b;" onclick="clearSearch()">ล้างข้อมูล</button>
+        <button class="btn-main" style="background: #1e40af; color: #ffffff;" onclick="render()">🔎 ค้นหา</button>
+<button class="btn-main" style="background: #dc2626; color: #ffffff;" onclick="clearSearch()">ล้างข้อมูล</button>
     </div>
 
     <div style="margin-bottom: 15px; font-weight: bold;">
@@ -238,7 +309,7 @@
         <h2 id="modalTitle" style="margin-top: 0; color: var(--primary);">เพิ่มข้อมูลหน่วยงาน</h2>
         <input type="hidden" id="editIndex" value="">
         <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div class="search-group"><label>ชื่อหน่วยงาน*</label><input id="newName" placeholder="เช่น กู้ชีพ อบต.ผาน้อย"></div>
+            <div class="search-group"><label>ชื่อหน่วยงาน*</label><input id="newName" placeholder="เช่น กู้ชีพ รพ.สปส"></div>
             <div class="search-group"><label>เบอร์โทรศัพท์</label><input id="newPhone" placeholder="045-xxxxxx"></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="search-group"><label>ตำบล</label><input id="newSub" placeholder="ตำบล"></div>
@@ -250,7 +321,7 @@
                     <option value="ALS">ALS (ระดับสูง)</option>
                     <option value="ILS">ILS (ระดับกลาง)</option>
                     <option value="BLS">BLS (ระดับพื้นฐาน)</option>
-                    <option value="FR">FR (ระดับเบื้องต้น)</option>
+                    <option value="FR">FR (ระดับพื้นฐาน)</option>
                 </select>
             </div>
             <div class="search-group">
@@ -364,6 +435,14 @@
             distSelect.appendChild(opt);
         });
         updateSubdistrictDropdown();
+		// เพิ่มคำสั่งนี้ไว้ในส่วนท้ายของฟังก์ชัน updateFilters() และ updateSubdistrictDropdown()
+$(document).ready(function() {
+    $('#searchDist').select2({ placeholder: "เลือกอำเภอ", allowClear: true });
+    $('#searchSub').select2({ placeholder: "เลือกตำบล", allowClear: true });
+});
+
+// และในฟังก์ชัน render() เมื่อมีการอัปเดตข้อมูลใหม่ ให้สั่ง refresh select2 ด้วยครับ
+// $('#searchDist').trigger('change');
     }
 
     function updateSubdistrictDropdown() {
@@ -389,22 +468,42 @@
         }
     }
 
-    function updateDatalist() {
-        const dl = document.getElementById("unitList");
-        dl.innerHTML = "";
-        [...new Set(window.data.map(item => item.name))].sort((a,b) => a.localeCompare(b, 'th')).forEach(name => {
-            const opt = document.createElement("option");
-            opt.value = name;
-            dl.appendChild(opt);
-        });
-    }
+   function updateDatalist() {
+    const nameSelect = document.getElementById("searchName");
+    // เก็บค่าที่เลือกไว้ก่อนหน้า (ถ้ามี)
+    const currentVal = $(nameSelect).val(); 
+    
+    // ดึงชื่อที่ไม่ซ้ำกัน
+    const uniqueNames = [...new Set(window.data.map(item => item.name))];
+    
+    nameSelect.innerHTML = '<option value="">ทั้งหมด</option>';
+    uniqueNames.sort((a,b) => a.localeCompare(b, 'th')).forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.innerText = name;
+        nameSelect.appendChild(opt);
+    });
+
+    // สั่งให้ Select2 ทำงานกับช่องชื่อหน่วย
+    $('#searchName').select2({
+        placeholder: "พิมพ์ค้นหาชื่อหน่วยงาน...",
+        allowClear: true,
+        width: '100%'
+    }).val(currentVal).trigger('change.select2');
+}
 
     function clearSearch() {
-        document.getElementById("searchName").value = "";
-        document.getElementById("searchDist").value = "";
-        updateSubdistrictDropdown();
-        render();
-    }
+    document.getElementById("searchName").value = "";
+    document.getElementById("searchDist").value = "";
+    document.getElementById("searchSub").value = "";
+    
+    // รีเซ็ตหน้าตาของ Select2 ทั้ง 3 ช่อง
+    $('#searchName').val(null).trigger('change');
+    $('#searchDist').val(null).trigger('change');
+    $('#searchSub').val(null).trigger('change');
+    
+    render();
+}
 
     window.onclick = function(event) { if (event.target.className === 'modal') event.target.style.display = "none"; }
 
@@ -414,6 +513,9 @@
         if(event.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83))) return false;
     };
 </script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 
 </body>
 </html>
