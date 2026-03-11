@@ -1,37 +1,84 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    /* ปรับแต่งให้เข้ากับธีม Sarabun ของคุณ */
-    .select2-container--default .select2-selection--single {
-        height: 40px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 5px;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 38px;
-    }
-    .select2-dropdown {
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-    }
-</style>
-
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ศูนย์รับแจ้งเหตุและสั่งการ จังหวัดอุบลราชธานี</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
+    <style>
+        :root {
+            --primary: #1e40af;
+            --accent: #dc2626;
+            --als: #ff69b4; --ils: #10b981; --bls: #3b82f6; --fr: #3b82f6;
+            --bg: #f1f5f9;
+        }
+
+        body { 
+            font-family: 'Sarabun', sans-serif; margin: 0; background: var(--bg); color: #334155; padding-bottom: 50px; 
+            user-select: none; -webkit-user-select: none;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+            color: white; padding: 25px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .container { max-width: 1100px; margin: auto; padding: 20px; }
+
+        .select2-container--default .select2-selection--single { height: 40px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 5px; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 38px; }
+
+        .search-container {
+            background: white; padding: 20px; border-radius: 15px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); align-items: end;
+        }
+
+        .search-group { display: flex; flex-direction: column; gap: 5px; }
+        .search-group label { font-size: 13px; font-weight: bold; color: #64748b; }
+        .search-group select, .search-group input { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 14px; }
+
+        .btn-main {
+            background: var(--primary); color: white; border: none; padding: 12px 20px; 
+            border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .btn-main:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-open-modal { background: #059669; margin-bottom: 20px; width: 100%; font-size: 16px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card {
+            background: white; border-radius: 16px; padding: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s ease; position: relative;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: var(--primary); }
+        .unit-name { font-size: 17px; font-weight: 700; color: var(--primary); margin: 0; }
+        .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; color: white; font-weight: bold; }
+        .badge-als { background: var(--als); } .badge-ils { background: var(--ils); } 
+        .badge-bls { background: var(--bls); } .badge-fr { background: var(--fr); }
+
+        .phone-num { color: var(--accent); font-weight: bold; cursor: copy; padding: 2px 5px; border-radius: 4px; }
+        .phone-num:hover { background: #fee2e2; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
+        .modal-content { background: white; margin: 2% auto; padding: 25px; width: 90%; max-width: 650px; border-radius: 20px; position: relative; }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #64748b; }
+
+        .staff-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        .staff-table th, .staff-table td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        .staff-table th { background: #f8fafc; color: #64748b; }
+        .btn-add-staff { background: #059669; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
+    </style>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Firebase Configuration ที่คุณให้มา
         const firebaseConfig = {
             apiKey: "AIzaSyCjTuJ2u8BIXrh2JYQ1rQfY6rH6OVNZF10",
             authDomain: "ems-ubon-cloud.firebaseapp.com",
@@ -40,31 +87,27 @@
             messagingSenderId: "313112607978",
             appId: "1:313112607978:web:1cfad9dba9f344eb0b6b93",
             measurementId: "G-L08JF15BQW",
-            databaseURL: "https://ems-ubon-cloud-default-rtdb.asia-southeast1.firebasedatabase.app" // เพิ่มเติมให้เพื่อให้เชื่อมฐานข้อมูลได้
+            databaseURL: "https://ems-ubon-cloud-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const dbRef = ref(db, 'ems_units');
 
-        // --- ฟังก์ชันหลักในการดึงข้อมูลจาก Firebase ---
         onValue(dbRef, (snapshot) => {
             const val = snapshot.val();
             window.data = val ? Object.keys(val).map(key => ({ ...val[key], id: key })) : [];
             updateFilters();
             render();
-			// เพิ่มคำสั่งนี้ไว้ในส่วนท้ายของฟังก์ชัน updateFilters() และ updateSubdistrictDropdown()
-$(document).ready(function() {
-    $('#searchDist').select2({ placeholder: "เลือกอำเภอ", allowClear: true });
-    $('#searchSub').select2({ placeholder: "เลือกตำบล", allowClear: true });
-});
-
-// และในฟังก์ชัน render() เมื่อมีการอัปเดตข้อมูลใหม่ ให้สั่ง refresh select2 ด้วยครับ
-// $('#searchDist').trigger('change');
+            
+            // Real-time update for staff table if detail modal is open
+            const currentUnitId = document.getElementById("targetUnitId").value;
+            if (currentUnitId && document.getElementById("detailModal").style.display === "block") {
+                const currentUnit = window.data.find(u => u.id === currentUnitId);
+                if (currentUnit) renderStaffTable(currentUnitId, currentUnit.staff);
+            }
         });
 
-        // ส่งฟังก์ชันออกไปยัง window เพื่อให้ HTML เรียกใช้ได้
         window.handleSave = function() {
             const name = document.getElementById("newName").value;
             const phone = document.getElementById("newPhone").value;
@@ -72,206 +115,82 @@ $(document).ready(function() {
             const dist = document.getElementById("newDist").value;
             const level = document.getElementById("newLevel").value;
             const mapLink = document.getElementById("newMapLink").value;
-            const editId = document.getElementById("editIndex").value; // ตอนนี้เก็บ ID ของ Firebase
+            const editId = document.getElementById("editIndex").value;
 
-            if (!name || !dist) {
-                Swal.fire('ข้อมูลไม่ครบ!', 'กรุณาระบุชื่อและอำเภอ', 'error');
-                return;
-            }
+            if (!name || !dist) { Swal.fire('ข้อมูลไม่ครบ!', 'กรุณาระบุชื่อและอำเภอ', 'error'); return; }
 
             const date = new Date().toLocaleString("th-TH", {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
             const unitData = { name, phone, sub, dist, level, mapLink, date };
 
-            if (editId === "") {
-                push(dbRef, unitData); // เพิ่มใหม่ลง Firebase
-            } else {
-                update(ref(db, 'ems_units/' + editId), unitData); // แก้ไขใน Firebase
-            }
+            if (editId === "") { push(dbRef, unitData); } 
+            else { update(ref(db, 'ems_units/' + editId), unitData); }
 
             toggleModal('addModal', false);
             Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1500 });
         };
 
+        window.saveStaff = function() {
+            const unitId = document.getElementById("targetUnitId").value;
+            const staffEditId = document.getElementById("editStaffId").value;
+            const name = document.getElementById("stName").value;
+            const phone = document.getElementById("stPhone").value;
+            const idCard = document.getElementById("stIdCard").value;
+            const level = document.getElementById("stLevel").value;
+
+            if(!name) { Swal.fire('กรุณาระบุชื่อเจ้าหน้าที่', '', 'warning'); return; }
+
+            const staffData = { name, phone, idCard, level };
+
+            if (staffEditId === "") {
+                const staffRef = ref(db, `ems_units/${unitId}/staff`);
+                push(staffRef, staffData).then(() => {
+                    Swal.fire({ icon: 'success', title: 'เพิ่มเจ้าหน้าที่เรียบร้อย', timer: 1000, showConfirmButton: false });
+                    resetStaffForm();
+                });
+            } else {
+                update(ref(db, `ems_units/${unitId}/staff/${staffEditId}`), staffData).then(() => {
+                    Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false });
+                    resetStaffForm();
+                });
+            }
+        };
+
+        window.deleteStaff = function(unitId, staffId) {
+            Swal.fire({
+                title: 'ลบรายชื่อ?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ'
+            }).then((res) => {
+                if(res.isConfirmed) remove(ref(db, `ems_units/${unitId}/staff/${staffId}`));
+            });
+        };
+
         window.deleteItem = function(id) {
             Swal.fire({
-                title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true,
-                confirmButtonColor: '#dc2626', confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก'
+                title: 'ลบหน่วยงานนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ'
             }).then((result) => {
-                if (result.isConfirmed) {
-                    remove(ref(db, 'ems_units/' + id));
-                }
+                if (result.isConfirmed) remove(ref(db, 'ems_units/' + id));
             });
         };
     </script>
+</head>
+<body>
 
-    <style>
-        :root {
-            --primary: #1e40af;
-            --accent: #dc2626;
-            --als: #ff69b4; 
-            --ils: #10b981; 
-            --bls: #3b82f6;
-            --fr: #3b82f6;
-            --bg: #f1f5f9;
-        }
-
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            margin: 0; 
-            background: var(--bg); 
-            color: #334155; 
-            padding-bottom: 50px; 
-            user-select: none; 
-            -webkit-user-select: none;
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-            color: white; padding: 25px; text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-
-        .container { max-width: 1100px; margin: auto; padding: 20px; }
-
-        .search-container {
-            background: white; padding: 20px; border-radius: 15px;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            align-items: end;
-        }
-
-        .search-group { display: flex; flex-direction: column; gap: 5px; }
-        .search-group label { font-size: 13px; font-weight: bold; color: #64748b; }
-        .search-group select, .search-group input { 
-            padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit;
-            font-size: 14px;
-        }
-
-        .btn-main {
-            background: var(--primary); color: white; border: none;
-            padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;
-        }
-        .btn-main:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-open-modal { background: #059669; margin-bottom: 20px; width: 100%; font-size: 16px; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        
-        .card {
-            background: white; border-radius: 16px; padding: 18px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
-            cursor: pointer; transition: all 0.2s ease;
-            position: relative;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            border-color: var(--primary);
-        }
-        
-        .card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
-        .unit-name { font-size: 17px; font-weight: 700; color: var(--primary); margin: 0; }
-        
-        .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; color: white; font-weight: bold; }
-        .badge-als { background: var(--als); }
-        .badge-ils { background: var(--ils); }
-        .badge-bls { background: var(--bls); }
-        .badge-fr { background: var(--fr); }
-
-        .info-item { display: flex; margin-bottom: 5px; font-size: 14px; }
-        .label { color: #94a3b8; width: 65px; font-size: 12px; }
-        
-        .phone-num { 
-            color: var(--accent); 
-            font-weight: bold; 
-            font-size: 16px; 
-            text-decoration: none; 
-            cursor: copy;
-            padding: 2px 5px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-        .phone-num:hover { background: #fee2e2; }
-        .phone-num::after { content: ' 📋'; font-size: 12px; opacity: 0.5; }
-
-        .card-footer {
-            margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f5f9;
-            display: flex; justify-content: space-between; align-items: center; font-size: 11px;
-        }
-        
-        .footer-btns { display: flex; gap: 5px; }
-        .btn-del { color: #ef4444; background: #fee2e2; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-edit { color: #1e40af; background: #dbeafe; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background: white; margin: 5% auto; padding: 30px;
-            width: 90%; max-width: 500px; border-radius: 20px; position: relative;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-        }
-        .close { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #64748b; }
-    </style>
 <header>
     <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 12px;">
-        <img src="https://i.postimg.cc/tgMz7SVd/sphch.png" alt="Logo 1" style="height: 89px; width: auto;">
-        <img src="https://i.postimg.cc/g0JDzFrV/xbc.png" alt="Logo 2" style="height: 85px; width: auto;">
+        <img src="https://i.postimg.cc/tgMz7SVd/sphch.png" alt="Logo 1" style="height: 80px;">
+        <img src="https://i.postimg.cc/g0JDzFrV/xbc.png" alt="Logo 2" style="height: 80px;">
     </div>
-    
-    <h1 style="margin: 0; font-size: clamp(18px, 5vw, 24px); line-height: 1.4;">
-        ข้อมูลหน่วยปฏิบัติการ ศูนย์รับแจ้งเหตุและสั่งการ จังหวัดอุบลราชธานี
-    </h1>
+    <h1 style="margin: 0; font-size: clamp(18px, 5vw, 24px);">ข้อมูลหน่วยปฏิบัติการ ศูนย์รับแจ้งเหตุและสั่งการ จังหวัดอุบลราชธานี</h1>
 </header>
-
-<style>
-    header {
-        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-        color: white; 
-        padding: 25px 15px;
-        text-align: center;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-    }
-
-    /* ตกแต่งเพิ่มเติมให้ดูทันสมัย */
-    header h1 {
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-</style>
-
-<style>
-    /* เพิ่มเติมสไตล์เพื่อให้ Header ดูดีขึ้น */
-    header {
-        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-        color: white; 
-        padding: 30px 20px; /* เพิ่มพื้นที่แนวตั้ง */
-        text-align: center;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column; /* จัดโลโก้และข้อความเรียงกันเป็นแนวตั้ง */
-        align-items: center;
-        justify-content: center;
-    }
-
-    header h1 {
-        max-width: 800px;
-        line-height: 1.4;
-    }
-</style>
 
 <div class="container">
     <button class="btn-main btn-open-modal" onclick="openAddModal()">+ เพิ่มหน่วยปฏิบัติการใหม่</button>
 
     <div class="search-container">
         <div class="search-group">
-            <div class="search-group">
-    <label>ชื่อหน่วยปฏิบัติการ</label>
-    <select id="searchName" onchange="handleNameSelect()">
-        <option value="">ทั้งหมด</option>
-    </select>
-</div>
+            <label>ชื่อหน่วยปฏิบัติการ</label>
+            <select id="searchName" onchange="handleNameSelect()">
+                <option value="">ทั้งหมด</option>
+            </select>
         </div>
         <div class="search-group">
             <label>อำเภอ</label>
@@ -285,8 +204,8 @@ $(document).ready(function() {
                 <option value="">ทั้งหมด</option>
             </select>
         </div>
-        <button class="btn-main" style="background: #1e40af; color: #ffffff;" onclick="render()">🔎 ค้นหา</button>
-<button class="btn-main" style="background: #dc2626; color: #ffffff;" onclick="clearSearch()">ล้างข้อมูล</button>
+        <button class="btn-main" onclick="render()">🔎 ค้นหา</button>
+        <button class="btn-main" style="background: #dc2626;" onclick="clearSearch()">ล้างข้อมูล</button>
     </div>
 
     <div style="margin-bottom: 15px; font-weight: bold;">
@@ -300,6 +219,45 @@ $(document).ready(function() {
     <div class="modal-content">
         <span class="close" onclick="toggleModal('detailModal', false)">×</span>
         <div id="detailContent"></div>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+        
+        <input type="hidden" id="targetUnitId">
+        <input type="hidden" id="editStaffId" value="">
+        <h3 id="staffFormTitle" style="color:var(--primary);">➕ เพิ่มรายชื่อเจ้าหน้าที่</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="search-group"><label>ชื่อ-นามสกุล</label><input id="stName" placeholder="ระบุชื่อ"></div>
+            <div class="search-group"><label>เบอร์โทรศัพท์</label><input id="stPhone" placeholder="08x-xxxxxxx"></div>
+            <div class="search-group"><label>เลขบัตรประชาชน</label><input id="stIdCard" placeholder="13 หลัก"></div>
+            <div class="search-group">
+                <label>ระดับ</label>
+                <select id="stLevel">
+                    <option>RN (พยาบาล)</option>
+                    <option>AEMT (ระดับกลาง)</option>
+                    <option>EMT (ระดับพื้นฐาน)</option>
+                    <option>FR (อาสาสมัคร)</option>
+                    <option>Driver (พนักงานขับรถ)</option>
+                </select>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnStaffSubmit" class="btn-add-staff" onclick="saveStaff()">บันทึกรายชื่อเจ้าหน้าที่</button>
+            <button id="btnCancelEdit" class="btn-add-staff" style="background:#64748b; display:none;" onclick="resetStaffForm()">ยกเลิก</button>
+        </div>
+
+        <h3 style="margin-top:25px; font-size: 16px;">📋 รายชื่อเจ้าหน้าที่ในหน่วย</h3>
+        <div style="overflow-x:auto;">
+            <table class="staff-table">
+                <thead>
+                    <tr>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>เบอร์โทร</th>
+                        <th>ระดับ</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="staffListTable"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -325,8 +283,8 @@ $(document).ready(function() {
                 </select>
             </div>
             <div class="search-group">
-                <label style="color: #059669;">📍 Link Google Maps (ถ้ามี)</label>
-                <input id="newMapLink" placeholder="วางลิงก์จาก Google Maps ที่นี่">
+                <label style="color: #059669;">📍 Link Google Maps</label>
+                <input id="newMapLink" placeholder="วางลิงก์ Google Maps ที่นี่">
             </div>
             <button id="btnSubmit" class="btn-main" style="background: var(--accent); margin-top: 10px;" onclick="handleSave()">บันทึกข้อมูล</button>
         </div>
@@ -334,19 +292,19 @@ $(document).ready(function() {
 </div>
 
 <script>
-    window.data = []; // เก็บข้อมูลจาก Firebase
+    window.data = [];
 
     function copyNumber(phone, event) {
         if (event) event.stopPropagation();
         if (!phone || phone === '-') return;
         navigator.clipboard.writeText(phone).then(() => {
-            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-            Toast.fire({ icon: 'success', title: 'คัดลอกเบอร์ ' + phone + ' แล้ว' });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'คัดลอก ' + phone, showConfirmButton: false, timer: 1500 });
         });
     }
 
-    function toggleModal(id, show) {
-        document.getElementById(id).style.display = show ? "block" : "none";
+    function toggleModal(id, show) { 
+        document.getElementById(id).style.display = show ? "block" : "none"; 
+        if(id === 'detailModal' && !show) resetStaffForm();
     }
 
     function openAddModal() {
@@ -360,7 +318,6 @@ $(document).ready(function() {
     function editItem(id) {
         const item = window.data.find(u => u.id === id);
         document.getElementById("modalTitle").innerText = "แก้ไขข้อมูลหน่วยงาน";
-        document.getElementById("btnSubmit").innerText = "บันทึกการแก้ไข";
         document.getElementById("editIndex").value = id;
         document.getElementById("newName").value = item.name;
         document.getElementById("newPhone").value = item.phone;
@@ -388,17 +345,17 @@ $(document).ready(function() {
                             <p class="unit-name">${item.name}</p>
                             <span class="badge badge-${item.level.toLowerCase()}">${item.level}</span>
                         </div>
-                        <div class="info-item">
-                            <span class="label">เบอร์โทร:</span>
+                        <div style="font-size:14px; margin-bottom:5px;">
+                            <span style="color:#94a3b8; font-size:12px;">เบอร์โทร:</span>
                             <span class="phone-num" onclick="copyNumber('${item.phone}', event)">${item.phone || '-'}</span>
                         </div>
-                        <div class="info-item"><span class="label">พื้นที่:</span><span>ต.${item.sub} อ.${item.dist}</span></div>
-                        <div class="card-footer">
-                            <span>อัปเดต: ${item.date}</span>
-                            <div class="footer-btns">
-                                <button class="btn-edit" onclick="event.stopPropagation(); editItem('${item.id}')">แก้ไข</button>
-                                <button class="btn-del" onclick="event.stopPropagation(); deleteItem('${item.id}')">ลบ</button>
-                            </div>
+                        <div style="font-size:14px;"><span style="color:#94a3b8; font-size:12px;">พื้นที่:</span> ต.${item.sub} อ.${item.dist}</div>
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                             <small style="color:#94a3b8;">🕒 อัปเดตเมื่อ: ${item.date || '-'}</small>
+                             <div>
+                                <button class="btn-main" style="padding:4px 8px; font-size:11px; background:#dbeafe; color:#1e40af;" onclick="event.stopPropagation(); editItem('${item.id}')">แก้ไข</button>
+                                <button class="btn-main" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#ef4444;" onclick="event.stopPropagation(); deleteItem('${item.id}')">ลบ</button>
+                             </div>
                         </div>
                     </div>
                 `;
@@ -410,19 +367,65 @@ $(document).ready(function() {
 
     function showDetail(id) {
         const item = window.data.find(u => u.id === id);
+        document.getElementById("targetUnitId").value = id;
         document.getElementById("detailContent").innerHTML = `
-            <h2 style="color:var(--primary);">${item.name}</h2>
+            <h2 style="color:var(--primary); margin-bottom:5px;">${item.name}</h2>
             <span class="badge badge-${item.level.toLowerCase()}">${item.level}</span>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            <div id="detailArea">
-                <p>📍 ต.${item.sub} อ.${item.dist}</p>
-                <p>📞 เบอร์ติดต่อ: <span class="phone-num" onclick="copyNumber('${item.phone}')">${item.phone || '-'}</span></p>
-                <div style="margin-top:20px; text-align:center;">
-                    <a href="${item.mapLink}" target="_blank" class="btn-main" style="text-decoration:none; background:#059669;">เปิด Google Maps</a>
-                </div>
-            </div>
+            <p style="margin-top:15px;">📍 ต.${item.sub} อ.${item.dist}</p>
+            <p>📞 เบอร์ติดต่อ: <span class="phone-num" onclick="copyNumber('${item.phone}')">${item.phone || '-'}</span></p>
+            <a href="${item.mapLink}" target="_blank" class="btn-main" style="display:inline-block; text-decoration:none; background:#059669; font-size:13px;">เปิด Google Maps</a>
         `;
+        renderStaffTable(id, item.staff);
         toggleModal('detailModal', true);
+    }
+
+    function renderStaffTable(unitId, staffObj) {
+        const tbody = document.getElementById("staffListTable");
+        tbody.innerHTML = "";
+        if(!staffObj) {
+            tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#94a3b8;'>ไม่พบข้อมูลเจ้าหน้าที่</td></tr>";
+            return;
+        }
+        Object.keys(staffObj).forEach(key => {
+            const s = staffObj[key];
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${s.name}</b><br><small style="color:#94a3b8;">${s.idCard || '-'}</small></td>
+                    <td>${s.phone || '-'}</td>
+                    <td>${s.level}</td>
+                    <td>
+                        <button onclick="editStaff('${unitId}', '${key}')" style="color:blue; border:none; background:none; cursor:pointer; margin-right:10px;">แก้ไข</button>
+                        <button onclick="deleteStaff('${unitId}', '${key}')" style="color:red; border:none; background:none; cursor:pointer;">ลบ</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function editStaff(unitId, staffId) {
+        const unit = window.data.find(u => u.id === unitId);
+        const s = unit.staff[staffId];
+        document.getElementById("editStaffId").value = staffId;
+        document.getElementById("stName").value = s.name;
+        document.getElementById("stPhone").value = s.phone;
+        document.getElementById("stIdCard").value = s.idCard;
+        document.getElementById("stLevel").value = s.level;
+        
+        document.getElementById("staffFormTitle").innerText = "📝 แก้ไขรายชื่อเจ้าหน้าที่";
+        document.getElementById("btnStaffSubmit").innerText = "อัปเดตรายชื่อ";
+        document.getElementById("btnStaffSubmit").style.background = "#3b82f6";
+        document.getElementById("btnCancelEdit").style.display = "block";
+    }
+
+    function resetStaffForm() {
+        document.getElementById("editStaffId").value = "";
+        document.getElementById("stName").value = "";
+        document.getElementById("stPhone").value = "";
+        document.getElementById("stIdCard").value = "";
+        document.getElementById("staffFormTitle").innerText = "➕ เพิ่มรายชื่อเจ้าหน้าที่";
+        document.getElementById("btnStaffSubmit").innerText = "บันทึกรายชื่อเจ้าหน้าที่";
+        document.getElementById("btnStaffSubmit").style.background = "#059669";
+        document.getElementById("btnCancelEdit").style.display = "none";
     }
 
     function updateFilters() {
@@ -435,14 +438,10 @@ $(document).ready(function() {
             distSelect.appendChild(opt);
         });
         updateSubdistrictDropdown();
-		// เพิ่มคำสั่งนี้ไว้ในส่วนท้ายของฟังก์ชัน updateFilters() และ updateSubdistrictDropdown()
-$(document).ready(function() {
-    $('#searchDist').select2({ placeholder: "เลือกอำเภอ", allowClear: true });
-    $('#searchSub').select2({ placeholder: "เลือกตำบล", allowClear: true });
-});
-
-// และในฟังก์ชัน render() เมื่อมีการอัปเดตข้อมูลใหม่ ให้สั่ง refresh select2 ด้วยครับ
-// $('#searchDist').trigger('change');
+        $(document).ready(function() {
+            $('#searchDist').select2({ placeholder: "เลือกอำเภอ", allowClear: true });
+            $('#searchSub').select2({ placeholder: "เลือกตำบล", allowClear: true });
+        });
     }
 
     function updateSubdistrictDropdown() {
@@ -462,60 +461,36 @@ $(document).ready(function() {
 
     function handleNameSelect() {
         if (document.getElementById("searchName").value.trim() !== "") {
-            document.getElementById("searchDist").value = "";
-            document.getElementById("searchSub").value = "";
-            updateSubdistrictDropdown();
+            $('#searchDist').val(null).trigger('change');
+            $('#searchSub').val(null).trigger('change');
         }
     }
 
-   function updateDatalist() {
-    const nameSelect = document.getElementById("searchName");
-    // เก็บค่าที่เลือกไว้ก่อนหน้า (ถ้ามี)
-    const currentVal = $(nameSelect).val(); 
-    
-    // ดึงชื่อที่ไม่ซ้ำกัน
-    const uniqueNames = [...new Set(window.data.map(item => item.name))];
-    
-    nameSelect.innerHTML = '<option value="">ทั้งหมด</option>';
-    uniqueNames.sort((a,b) => a.localeCompare(b, 'th')).forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.innerText = name;
-        nameSelect.appendChild(opt);
-    });
-
-    // สั่งให้ Select2 ทำงานกับช่องชื่อหน่วย
-    $('#searchName').select2({
-        placeholder: "พิมพ์ค้นหาชื่อหน่วยงาน...",
-        allowClear: true,
-        width: '100%'
-    }).val(currentVal).trigger('change.select2');
-}
+    function updateDatalist() {
+        const nameSelect = document.getElementById("searchName");
+        const currentVal = $(nameSelect).val(); 
+        const uniqueNames = [...new Set(window.data.map(item => item.name))];
+        nameSelect.innerHTML = '<option value="">ทั้งหมด</option>';
+        uniqueNames.sort((a,b) => a.localeCompare(b, 'th')).forEach(name => {
+            const opt = document.createElement("option");
+            opt.value = name; opt.innerText = name;
+            nameSelect.appendChild(opt);
+        });
+        $('#searchName').select2({ placeholder: "พิมพ์ชื่อหน่วยงาน...", allowClear: true, width: '100%' }).val(currentVal);
+    }
 
     function clearSearch() {
-    document.getElementById("searchName").value = "";
-    document.getElementById("searchDist").value = "";
-    document.getElementById("searchSub").value = "";
-    
-    // รีเซ็ตหน้าตาของ Select2 ทั้ง 3 ช่อง
-    $('#searchName').val(null).trigger('change');
-    $('#searchDist').val(null).trigger('change');
-    $('#searchSub').val(null).trigger('change');
-    
-    render();
-}
+        $('#searchName').val(null).trigger('change');
+        $('#searchDist').val(null).trigger('change');
+        $('#searchSub').val(null).trigger('change');
+        render();
+    }
 
-    window.onclick = function(event) { if (event.target.className === 'modal') event.target.style.display = "none"; }
-
-    // SECURITY LOCK (คงเดิม)
-    document.addEventListener('contextmenu', e => e.preventDefault(), false);
-    document.onkeydown = function(e) {
-        if(event.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83))) return false;
-    };
+    window.onclick = function(event) { if (event.target.className === 'modal') toggleModal(event.target.id, false); }
+    
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.onkeydown = function(e) { if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && e.keyCode == 85)) return false; };
 </script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 
 </body>
 </html>
