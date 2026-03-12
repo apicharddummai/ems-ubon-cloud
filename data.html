@@ -11,6 +11,44 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
+	/* --- Pagination Styles --- */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+.page-btn {
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+.page-btn:hover {
+    background: #f1f5f9;
+    border-color: var(--primary);
+}
+.page-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+	
+	
+	
+	
+	
+	
         /* --- Login Overlay ปรับปรุงใหม่ --- */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -134,6 +172,8 @@
     </div>
 
     <div class="grid" id="list"></div>
+	<div id="pagination" class="pagination-container"></div>
+	
 </div>
 
 <div id="detailModal" class="modal">
@@ -434,59 +474,114 @@
         toggleModal('addModal', true);
     }
 
-    function render() {
-        const list = document.getElementById("list");
-        const fName = document.getElementById("searchName").value; 
-        const fDist = document.getElementById("searchDist").value;
-        const fSub = document.getElementById("searchSub").value;
-        list.innerHTML = "";
-        let count = 0;
+    // เพิ่มตัวแปรควบคุมหน้าไว้ด้านบนสุดของสคริปต์
+let currentPage = 1;
+const itemsPerPage = 12; // แสดงหน้าละ 12 หน่วยงาน
 
-        const levelPriority = { 'ALS': 1, 'ILS': 2, 'BLS': 3, 'FR': 4, 'NONE': 5 };
-        const sortedData = [...window.data].sort((a, b) => {
-            const pA = levelPriority[a.level] || 99;
-            const pB = levelPriority[b.level] || 99;
-            return pA === pB ? a.name.localeCompare(b.name, 'th') : pA - pB;
-        });
+function render() {
+    const list = document.getElementById("list");
+    const pagination = document.getElementById("pagination");
+    const fName = document.getElementById("searchName").value; 
+    const fDist = document.getElementById("searchDist").value;
+    const fSub = document.getElementById("searchSub").value;
+    
+    list.innerHTML = "";
+    pagination.innerHTML = "";
 
-        sortedData.forEach((item) => {
-            if ((!fName || item.name === fName) && (!fDist || item.dist === fDist) && (!fSub || item.sub === fSub)) {
-                count++;
-                let pDisp = '-';
-                if (item.phone && item.phone !== '-') {
-                    const pArr = item.phone.split(/[,/ ]+/);
-                    pDisp = pArr[0].trim() + (pArr.length > 1 ? ` (+${pArr.length - 1})` : '');
-                }
-                const iconUrl = item.level === 'ALS' ? iconALS : iconFR;
-                
-                // แยกปุ่ม Admin
-                const adminControls = window.isAdmin ? `
-                    <div>
-                        <button class="btn-main" style="padding:4px 8px; font-size:11px; background:#dbeafe; color:#1e40af;" onclick="event.stopPropagation(); editItem('${item.id}')">แก้ไข</button>
-                        <button class="btn-main" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#ef4444;" onclick="event.stopPropagation(); deleteItem('${item.id}')">ลบ</button>
+    // 1. กรองข้อมูล (Filtering)
+    const filteredData = window.data.filter(item => {
+        return (!fName || item.name === fName) && 
+               (!fDist || item.dist === fDist) && 
+               (!fSub || item.sub === fSub);
+    });
+
+    // 2. จัดเรียงข้อมูล (Sorting)
+    const levelPriority = { 'ALS': 1, 'ILS': 2, 'BLS': 3, 'FR': 4, 'NONE': 5 };
+    const sortedData = filteredData.sort((a, b) => {
+        const pA = levelPriority[a.level] || 99;
+        const pB = levelPriority[b.level] || 99;
+        return pA === pB ? a.name.localeCompare(b.name, 'th') : pA - pB;
+    });
+
+    // 3. คำนวณการแบ่งหน้า (Pagination Logic)
+    const totalItems = sortedData.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    // ป้องกันกรณีเปลี่ยนฟิลเตอร์แล้วหน้าปัจจุบันเกินจำนวนหน้าที่มี
+    if (currentPage > totalPages) currentPage = 1;
+    if (totalPages === 0) currentPage = 0;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageData = sortedData.slice(startIndex, endIndex);
+
+    // 4. แสดงผลการ์ด
+    pageData.forEach((item) => {
+        let pDisp = '-';
+        if (item.phone && item.phone !== '-') {
+            const pArr = item.phone.split(/[,/ ]+/);
+            pDisp = pArr[0].trim() + (pArr.length > 1 ? ` (+${pArr.length - 1})` : '');
+        }
+
+        // จัดการระดับ "ไม่มีระดับปฏิบัติการ"
+        const badgeText = item.level === 'NONE' ? 'ไม่มีระดับ' : item.level;
+        const iconUrl = item.level === 'ALS' ? iconALS : iconFR;
+
+        const adminControls = window.isAdmin ? `
+            <div>
+                <button class="btn-main" style="padding:4px 8px; font-size:11px; background:#dbeafe; color:#1e40af;" onclick="event.stopPropagation(); editItem('${item.id}')">แก้ไข</button>
+                <button class="btn-main" style="padding:4px 8px; font-size:11px; background:#fee2e2; color:#ef4444;" onclick="event.stopPropagation(); deleteItem('${item.id}')">ลบ</button>
+            </div>
+        ` : `<div style="color:var(--primary); font-size:12px; font-weight:bold;">ดูรายละเอียด ></div>`;
+
+        list.innerHTML += `
+            <div class="card" onclick="showDetail('${item.id}')">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div style="display:flex; align-items:center;">
+                        <img src="${iconUrl}" class="unit-icon" alt="icon">
+                        <p class="unit-name">${item.name}</p>
                     </div>
-                ` : `<div style="color:var(--primary); font-size:12px; font-weight:bold;">ดูรายละเอียด ></div>`;
+                    <span class="badge badge-${item.level.toLowerCase()}">${badgeText}</span>
+                </div>
+                <div style="font-size:14px; margin-top:10px;"><span style="color:#94a3b8;">📞 เบอร์โทร:</span> <span class="phone-num">${pDisp}</span></div>
+                <div style="font-size:14px;"><span style="color:#94a3b8;">พื้นที่:</span> ต.${item.sub} อ.${item.dist}</div>
+                <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                     <small style="color:#94a3b8;">🕒 ${item.date || '-'}</small>
+                     ${adminControls}
+                </div>
+            </div>`;
+    });
 
-                list.innerHTML += `
-                    <div class="card" onclick="showDetail('${item.id}')">
-                        <div style="display:flex; justify-content:space-between; align-items:start;">
-                            <div style="display:flex; align-items:center;">
-                                <img src="${iconUrl}" class="unit-icon" alt="icon">
-                                <p class="unit-name">${item.name}</p>
-                            </div>
-                            <span class="badge badge-${item.level.toLowerCase()}">${item.level}</span>
-                        </div>
-                        <div style="font-size:14px; margin-top:10px;"><span style="color:#94a3b8;">📞 เบอร์โทร:</span> <span class="phone-num">${pDisp}</span></div>
-                        <div style="font-size:14px;"><span style="color:#94a3b8;">พื้นที่:</span> ต.${item.sub} อ.${item.dist}</div>
-                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
-                             <small style="color:#94a3b8;">🕒 ${item.date || '-'}</small>
-                             ${adminControls}
-                        </div>
-                    </div>`;
-            }
-        });
-        document.getElementById("total").innerText = count;
+    // 5. สร้างปุ่ม Pagination
+    if (totalPages > 1) {
+        // ปุ่มก่อนหน้า
+        const prevBtn = document.createElement('button');
+        prevBtn.innerText = 'ก่อนหน้า';
+        prevBtn.className = 'page-btn';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => { currentPage--; render(); window.scrollTo(0, 0); };
+        pagination.appendChild(prevBtn);
+
+        // เลขหน้า
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.innerText = i;
+            btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+            btn.onclick = () => { currentPage = i; render(); window.scrollTo(0, 0); };
+            pagination.appendChild(btn);
+        }
+
+        // ปุ่มถัดไป
+        const nextBtn = document.createElement('button');
+        nextBtn.innerText = 'ถัดไป';
+        nextBtn.className = 'page-btn';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => { currentPage++; render(); window.scrollTo(0, 0); };
+        pagination.appendChild(nextBtn);
     }
+
+    document.getElementById("total").innerText = totalItems;
+}
 
     function showDetail(id) {
         const item = window.data.find(u => u.id === id);
@@ -580,7 +675,11 @@
     }
 
     function handleNameSelect() { if ($("#searchName").val()) { $('#searchDist, #searchSub').val(null).trigger('change.select2'); } }
-    function clearSearch() { $('#searchName, #searchDist, #searchSub').val(null).trigger('change.select2'); render(); }
+    function clearSearch() { 
+    $('#searchName, #searchDist, #searchSub').val(null).trigger('change.select2'); 
+    currentPage = 1; // เพิ่มบรรทัดนี้
+    render(); 
+}
     window.onclick = (e) => { if (e.target.className === 'modal') toggleModal(e.target.id, false); }
 
     // ป้องกันการ Copy/Inspect
