@@ -229,7 +229,6 @@
         const userCode = document.getElementById('admin-usercode').value;
         const pass = document.getElementById('admin-password').value;
         
-        // เช็คค่าว่างก่อนกด (ป้องกัน Pop-up เด้งมั่ว)
         if(!userCode || !pass) {
             return Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบ', text: 'ระบุรหัสผู้ใช้งานและรหัสผ่าน' });
         }
@@ -240,7 +239,14 @@
         signInWithEmailAndPassword(auth, fullEmail, pass)
             .then(() => { 
                 sessionStorage.setItem('loginMode', 'admin');
-                Swal.close(); // ปิดตัวโหลดเมื่อสำเร็จ
+                // เพิ่ม Pop-up แจ้งเตือนสำเร็จตรงนี้
+                Swal.fire({
+                    icon: 'success',
+                    title: 'เข้าสู่ระบบสำเร็จ',
+                    text: 'ยินดีต้อนรับเข้าสู่ระบบจัดการข้อมูล (Admin)',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
             })
             .catch(err => {
                 console.error(err);
@@ -252,6 +258,16 @@
         window.isAdmin = false;
         sessionStorage.setItem('loginMode', 'guest');
         document.getElementById('login-overlay').style.display = 'none';
+        
+        Swal.fire({
+            icon: 'info',
+            title: 'เข้าใช้งานในโหมดทั่วไป',
+            timer: 1000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+        
         initApp();
     };
 
