@@ -65,7 +65,7 @@
         .unit-name { font-size: 17px; font-weight: 700; color: var(--primary); margin: 0; line-height: 1.2; }
         .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; color: white; font-weight: bold; }
         .badge-als { background: var(--als); } .badge-ils { background: var(--ils); } 
-        .badge-bls { background: var(--bls); } .badge-fr { background: var(--fr); }
+        .badge-bls { background: var(--bls); } .badge-fr { background: var(--fr); } .badge-none { background: #94a3b8; } /* สีเทาสำหรับหน่วยที่ไม่มีระดับ */
         .phone-num { color: var(--accent); font-weight: bold; cursor: copy; padding: 2px 5px; border-radius: 4px; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; }
         .modal-content { background: white; margin: 2% auto; padding: 25px; width: 90%; max-width: 650px; border-radius: 20px; position: relative; }
@@ -193,10 +193,12 @@
             <div class="search-group">
                 <label>ระดับการปฏิบัติการ</label>
                 <select id="newLevel">
+				
                     <option value="ALS">ALS (ระดับสูง)</option>
                     <option value="ILS">ILS (ระดับกลาง)</option>
                     <option value="BLS">BLS (ระดับพื้นฐาน)</option>
                     <option value="FR">FR (ระดับพื้นฐาน)</option>
+					<option value="NONE">ไม่มีระดับปฏิบัติการ)</option>
                 </select>
             </div>
             <div class="search-group"><label>📍 Link Google Maps</label><input id="newMapLink"></div>
@@ -440,7 +442,7 @@
         list.innerHTML = "";
         let count = 0;
 
-        const levelPriority = { 'ALS': 1, 'ILS': 2, 'BLS': 3, 'FR': 4 };
+        const levelPriority = { 'ALS': 1, 'ILS': 2, 'BLS': 3, 'FR': 4, 'NONE': 5 };
         const sortedData = [...window.data].sort((a, b) => {
             const pA = levelPriority[a.level] || 99;
             const pB = levelPriority[b.level] || 99;
